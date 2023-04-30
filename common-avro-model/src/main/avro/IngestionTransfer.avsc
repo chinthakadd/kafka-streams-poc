@@ -1,0 +1,31 @@
+{
+  "namespace": "com.chinthakad.kstreams.poc.models",
+  "name": "IngestionTransfer",
+  "type": "record",
+  "fields": [
+    {
+      "name": "id",
+      "type": "long"
+    },
+    {
+      "name": "fromUserId",
+      "type": "long"
+    },
+    {
+      "name": "toUserId",
+      "type": "long"
+    },
+    {
+      "name": "amount",
+      "type": "double"
+    },
+    {
+      "name": "createdAt",
+      "type": "string"
+    },
+    {
+      "name": "lastUpdatedAt",
+      "type": "string"
+    }
+  ]
+}

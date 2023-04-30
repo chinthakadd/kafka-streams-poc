@@ -1,0 +1,1 @@
+Place your plugins inside /plugins folder

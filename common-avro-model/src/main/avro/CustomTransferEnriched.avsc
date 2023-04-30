@@ -1,0 +1,39 @@
+{
+  "namespace": "com.chinthakad.kstreams.poc.models",
+  "name": "CustomTransferEnriched",
+  "type": "record",
+  "fields": [
+    {
+      "name": "id",
+      "type": "long"
+    },
+    {
+      "name": "fromUserId",
+      "type": "long"
+    },
+    {
+      "name": "fromUserName",
+      "type": "string"
+    },
+    {
+      "name": "toUserId",
+      "type": "long"
+    },
+    {
+      "name": "toUserName",
+      "type": "string"
+    },
+    {
+      "name": "amount",
+      "type": "double"
+    },
+    {
+      "name": "createdAt",
+      "type": "string"
+    },
+    {
+      "name": "lastUpdatedAt",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+GRANT ALL PRIVILEGES ON bank.* TO 'mysqluser'@'%' WITH GRANT OPTION;

@@ -1,0 +1,25 @@
+{
+  "namespace": "com.chinthakad.kstreams.poc.models",
+  "name": "IngestionUser",
+  "type": "record",
+  "fields": [
+    {
+      "name": "id",
+      "type": "long"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "Desc goes here",
+      "classification": "d"
+    },
+    {
+      "name": "createdAt",
+      "type": "string"
+    },
+    {
+      "name": "lastUpdatedAt",
+      "type": "string"
+    }
+  ]
+}

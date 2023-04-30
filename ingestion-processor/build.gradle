@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'com.chinthakad.kstreams.poc'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://packages.confluent.io/maven"
+    }
+    // FOR: https://mvnrepository.com/artifact/com.github.everit-org.json-schema/org.everit.json.schema/1.12.2
+    // TODO: Check if we would need this.
+    maven {
+        url "https://repository.mulesoft.org/nexus/content/repositories/public"
+    }
+}
+
+dependencies {
+    implementation 'org.apache.kafka:kafka-streams:2.8.0'
+    implementation 'org.apache.avro:avro:1.8.2'
+    implementation project(':common-avro-model')
+
+    implementation("ch.qos.logback:logback-classic:1.2.10")
+    implementation("org.slf4j:slf4j-api:1.7.33")
+}

@@ -1,0 +1,129 @@
+version: '2.1'
+services:
+  zookeeper:
+    image: bitnami/zookeeper:3.7.0
+    restart: on-failure
+    ports:
+      - "2181:2181"
+    environment:
+      # To allow unauthenticated users to connect to zookeeper - Dev Only Setting
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+
+  kafka:
+    image: bitnami/kafka:3.1.0
+    restart: on-failure
+    ports:
+      - "29092:29092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Since we are using PLAINTEXT for all listeners, need to set this for Bitnami Image
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      # Setup custom listeners so that the broker listens on 2 different ports
+      # If we have only one - kafka:, then we can access it from another docker container, but not from host
+      # If we name it localhost:, then we can access it from host, but cannot from another docker container
+      # If we hardcoded an IP, we could have used the same host:port from both within docker and from host
+      # That is why we need both. Advertise the respective custom listener ports on different host names
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+      # Tell kafka to not authenticate for the custom listeners
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+
+  mysql:
+    image: mysql:8.0
+    restart: on-failure
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: kstreams-poc-pwd
+      MYSQL_USER: kstreams-poc-user
+      MYSQL_PASSWORD: kstreams-poc-pwd
+      MYSQL_DATABASE: kstreams-poc-db
+
+  mongo:
+    image: mongo:5
+    restart: on-failure
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: kstreams-poc-user
+      MONGO_INITDB_ROOT_PASSWORD: kstreams-poc-pwd
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:6.2.0
+    restart: on-failure
+    ports:
+      - "8091:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:9092"
+      # CORS needs to be enabled to allow schema-registry-ui to connect via browser
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: "*"
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: "GET,POST,PUT,OPTIONS"
+    depends_on:
+      - kafka
+
+  ## Kafka Connect (CP) Sample: https://github.com/confluentinc/demo-scene/blob/master/kafka-connect-zero-to-hero/docker-compose.yml
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect-base:6.2.0
+    restart: on-failure
+    ports:
+      - "8092:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_PLUGIN_PATH: '/data/plugins'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      # Since we are running a single kafka - broker, we need to set and override the default value of 3.
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+    volumes:
+      - './kafkaconnect/plugins:/data/plugins'
+    depends_on:
+      - kafka
+
+  mongo-ui:
+    image: mongo-express:0.54
+    restart: on-failure
+    ports:
+      - "8093:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: kstreams-poc-user
+      ME_CONFIG_MONGODB_ADMINPASSWORD: kstreams-poc-pwd
+      ME_CONFIG_MONGODB_SERVER: mongo
+    depends_on:
+      - mongo
+
+  schema-registry-ui:
+    image: landoop/schema-registry-ui:0.9.5
+    restart: on-failure
+    ports:
+      - "8094:8000"
+    environment:
+      SCHEMAREGISTRY_URL: "http://localhost:8091"
+      ALLOW_GLOBAL: "true"
+      ALLOW_TRANSITIVE: "true"
+      ALLOW_DELETION: "true"
+      READONLY_MODE: "true"
+
+  ## Kafka Web UI: https://github.com/provectus/kafka-ui
+  kafka-ui:
+    image: provectuslabs/kafka-ui:0.3.3
+    restart: on-failure
+    ports:
+      - "8095:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "kafka-docker"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka:9092'
+    depends_on:
+      - kafka
+

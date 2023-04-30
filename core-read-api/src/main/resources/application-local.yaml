@@ -1,0 +1,12 @@
+server:
+  port: 8082
+
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      username: kstreams-poc-user
+      password: kstreams-poc-pwd
+      database: kstreams-ods
+      authentication-database: admin

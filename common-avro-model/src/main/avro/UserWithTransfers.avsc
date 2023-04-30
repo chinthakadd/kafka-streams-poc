@@ -1,0 +1,27 @@
+{
+  "namespace": "com.chinthakad.kstreams.poc.models",
+  "name": "UserWithTransfers",
+  "type": "record",
+  "fields": [
+    {
+      "name": "userId",
+      "type": "string"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "Desc goes here",
+      "classification": "d"
+    },
+    {
+      "name": "transfers",
+      "type": {
+        "type": "array",
+        "items": {
+          "name": "transfer",
+          "type": "com.chinthakad.kstreams.poc.models.IngestionTransfer"
+        }
+      }
+    }
+  ]
+}

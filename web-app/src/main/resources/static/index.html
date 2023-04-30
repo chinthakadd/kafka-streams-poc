@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quickay</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap" rel="stylesheet">
+</head>
+<style>
+    body {
+        font-family: 'JetBrains Mono', monospace;
+        margin: 2rem;
+    }
+
+    h1,
+    h2 {
+        margin: 0;
+    }
+
+    input,
+    button {
+        font-family: 'JetBrains Mono', monospace;
+        padding: 0.5rem 1rem;
+    }
+
+    .row {
+        display: flex;
+    }
+
+    .col {
+        flex: 1;
+    }
+
+    .header {
+        background-color: black;
+        color: white;
+        text-align: center;
+    }
+
+    .card {
+        border: 1px solid black;
+        padding: 2rem;
+    }
+
+    h2 {
+        margin-bottom: 1rem;
+    }
+</style>
+
+<body>
+
+<header class="header">
+    <h1>Jet Pay</h1>
+</header>
+
+<div class="row">
+    <div class="card">
+        <h2>Customers</h2>
+        <input type="text" name="customerName" id="customerNameInput" placeholder="Customer Name">
+        <button id="addCustomerButton">Add Customer</button>
+
+        <ul id="customerList">
+        </ul>
+    </div>
+    <div class="col">
+
+        <div class="card">
+            <h2>New Transfer</h2>
+            <div>
+                <input type="text" name="from" id="fromInput" placeholder="From">
+                <input type="text" name="to" id="toInput" placeholder="To">
+                <input type="number" name="amount" id="amountInput" placeholder="Amount">
+                <button id="transferButton">Transfer</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Past Transfers</h2>
+            <button id="transferRefreshButton">Refresh</button>
+            <ul id="transferList">
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+<script>
+
+    // Configs
+    const NEW_CUSTOMER_API = '/users';
+    const GET_CUSTOMERS_API = '/users';
+    const NEW_TRANSFER_API = '/transfers';
+    const GET_TRANSFERS_API = '/transfers';
+
+    // FUNCTIONS THAT UPDATE UI ...........................
+    let updateCustomerView = () => {
+        document.querySelector("#customerList").innerHTML = '';
+        getCustomers().then((customers) => {
+            customers.forEach(({ id, name }) => {
+                let item = document.createElement('li')
+                item.innerHTML = `(${id}) - ${name}`
+                document.querySelector("#customerList").appendChild(item);
+            })
+        })
+
+    }
+
+    let updateTransferView = () => {
+        document.querySelector("#transferList").innerHTML = '';
+        getTransfers().then((transfers) => {
+            transfers.forEach(({ fromUserName, toUserName, amount, status }) => {
+                let item = document.createElement('li')
+                item.innerHTML = `(From) ${fromUserName} (to) ${toUserName} => $${amount}`
+                document.querySelector("#transferList").appendChild(item);
+            })
+        })
+    }
+
+    // FUNCTIONS THAT CALL APIS ...........................
+    let addNewCustomer = (username) => {
+        console.log(username);
+        fetch(NEW_CUSTOMER_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: username })
+        }).then((res) => res.json()).then((data) => {
+            updateCustomerView();
+        })
+    }
+
+    let transfer = (from, to, amount) => {
+        fetch(NEW_TRANSFER_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                fromUserId: from,
+                toUserId: to,
+                amount: amount
+            })
+        }).then((res) => res).then(() => {
+            updateTransferView();
+        })
+    }
+
+    let getTransfers = () => {
+        return fetch(GET_TRANSFERS_API).then((res) => res.json()).then((data) => {
+            return { fromUserName, toUserName, amount, status } = data;
+        })
+    }
+
+    let getCustomers = () => {
+        return fetch(GET_CUSTOMERS_API).then((res) => res.json()).then((data) => {
+            return { id, name } = data;
+        })
+    }
+
+    // EVENT LISTENERS ...........................
+    document.querySelector("#addCustomerButton").addEventListener('click', () => {
+        let usernameInput = document.querySelector("#customerNameInput").value;
+        addNewCustomer(usernameInput);
+    })
+    document.querySelector("#transferButton").addEventListener('click', () => {
+        let from = document.querySelector("#fromInput").value;
+        let to = document.querySelector("#toInput").value;
+        let amount = document.querySelector("#amountInput").value;
+        transfer(from, to, amount);
+    })
+    document.querySelector("#transferRefreshButton").addEventListener('click', () => {
+        updateTransferView();
+    })
+
+    // STARTUP
+    updateTransferView();
+    updateCustomerView();
+
+</script>
+</body>
+
+</html>

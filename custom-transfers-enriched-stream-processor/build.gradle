@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url = "https://packages.confluent.io/maven/"
+    }
+}
+
+dependencies {
+    implementation 'org.apache.kafka:kafka-streams:2.8.0'
+    implementation 'org.apache.avro:avro:1.8.2'
+    implementation project(':common-avro-model')
+
+    // required for schema-registry-compatible Avro Serdes
+    implementation ('io.confluent:kafka-streams-avro-serde:6.0.1') {
+        // this was required for the 2.7 upgrade, since the kafka-streams-avro-serde
+        // pulls in an incompatible transitive dependency (org.apache.kafka:kafka-clients:6.0.1-ccs)
+        exclude group: 'org.apache.kafka', module: 'kafka-clients'
+    }
+
+    implementation("ch.qos.logback:logback-classic:1.2.10")
+    implementation("org.slf4j:slf4j-api:1.7.33")
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task runDSL(type: JavaExec) {
+    mainClass = 'com.chinthakad.kstreams.poc.stream.transfer.TransferStreamProcessor'
+    classpath sourceSets.main.runtimeClasspath
+}

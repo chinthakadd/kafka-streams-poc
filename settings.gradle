@@ -1,0 +1,15 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'kafka-streams-poc'
+include 'custom-transfers-enriched-stream-processor'
+include 'core-write-api'
+include 'ingestion-processor'
+include 'common-avro-model'
+include 'core-read-api'
+include 'web-app'
+

@@ -1,0 +1,127 @@
+## Sample: https://github.com/debezium/debezium-examples/blob/main/unwrap-smt/docker-compose.yaml
+version: '2.1'
+services:
+  zookeeper:
+    hostname: zookeeper
+    image: bitnami/zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    hostname: kafka
+    image: bitnami/kafka
+    ports:
+      - '29092:29092'
+    depends_on:
+      - zookeeper
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ADVERTISED_HOST_NAME=kafka
+      - KAFKA_HEAP_OPTS=-Xmx320m -Xms320m
+      # - ZOOKEEPER_SERVERS=zookeeper:2181
+      # - KAFKA_ZOOKEEPER_PROTOCOL=PLAIN
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+
+  mysql:
+    hostname: mysql
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    volumes:
+      - './mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d'
+      - './mysql/conf.d:/etc/mysql/conf.d'
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpw
+      - MYSQL_USER=mysqluser
+      - MYSQL_PASSWORD=mysqlpw
+
+
+  mongodb:
+    image: mongo:5.0
+    hostname: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpw
+
+  mongo-express:
+    hostname: mongo-express
+    image: mongo-express
+    restart: always
+    ports:
+      - 8091:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: rootpw
+      ME_CONFIG_MONGODB_URL: mongodb://root:rootpw@mongodb:27017/
+    depends_on:
+      - mongodb
+
+  ## Kafka Connect (CP) Sample: https://github.com/confluentinc/demo-scene/blob/master/kafka-connect-zero-to-hero/docker-compose.yml
+  kafka-connect:
+    hostname: kafka-connect
+    image: confluentinc/cp-kafka-connect-base:6.2.0
+    ports:
+      - "8092:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: '/data/plugins'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+    volumes:
+      - './kafkaconnect/plugins:/data/plugins'
+    depends_on:
+      - kafka
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:6.2.0
+    hostname: schema-registry
+    ports:
+      - "8093:8081"
+    depends_on:
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:9092"
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: "*"
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: "GET,POST,PUT,OPTIONS"
+
+  schema-registry-ui:
+    image: landoop/schema-registry-ui
+    hostname: schema-registry-ui
+    ports:
+      - "8094:8000"
+    environment:
+      SCHEMAREGISTRY_URL: "http://localhost:8093"
+      ALLOW_GLOBAL: "true"
+      ALLOW_TRANSITIVE: "true"
+      ALLOW_DELETION: "true"
+      READONLY_MODE: "true"
+
+  ## Kafka Web UI: https://github.com/provectus/kafka-ui
+  kafka-ui:
+    hostname: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8095:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "kafka-docker"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka:9092'
+    depends_on:
+      - kafka
